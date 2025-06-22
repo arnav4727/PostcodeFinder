@@ -42,30 +42,40 @@
   <h2>UK Postcode Finder</h2>
 
   <input type="text" id="address" placeholder="Start typing address..." autocomplete="off">
+  <button id="getPostcodeBtn">Enter</button>
+
   <div id="postcode"></div>
 </div>
 
 <script>
-  var key = "AX37-WD68-EP29-JA94"; // Replace with your API key
+  let selectedAddress = null;
 
   var options = {
-    key: key,
+    key: "AX37-WD68-EP29-JA94", // Replace with your actual key
     input: "address",
-    countries: "GB", // UK Only
-    outputFields: {
-      line_1: "",
-      line_2: "",
-      line_3: "",
-      post_town: "",
-      postcode: "postcode" // We'll use this
-    },
+    countries: "GB", // UK only
     onAddressSelected: function(address) {
-      document.getElementById("postcode").innerText = "Postcode: " + address.postcode;
+      selectedAddress = address;
+      displayPostcode(address.postcode);
     }
   };
 
-  // Load Loqate Address Finder
+  // Initialize Loqate autocomplete
   new pca.Address(options);
+
+  // "Enter" button handler
+  document.getElementById("getPostcodeBtn").addEventListener("click", function () {
+    if (selectedAddress && selectedAddress.postcode) {
+      displayPostcode(selectedAddress.postcode);
+    } else {
+      document.getElementById("postcode").innerText = "Please select a valid UK address from the suggestions.";
+    }
+  });
+
+  // Show postcode
+  function displayPostcode(postcode) {
+    document.getElementById("postcode").innerText = "Postcode: " + postcode;
+  }
 </script>
 
 </body>
