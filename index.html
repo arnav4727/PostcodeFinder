@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>UK Postcode Finder (Loqate)</title>
-  <script src="https://cdn.loqate.com/js/address-3.1.min.js"></script>
+  <title>UK Postcode Finder (Forced Enter)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f0f0f0;
+      background: #f4f4f4;
       padding: 50px;
     }
     .container {
@@ -19,7 +18,7 @@
     }
     input, button {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin-top: 15px;
       border-radius: 6px;
       border: 1px solid #ccc;
@@ -39,42 +38,58 @@
 <body>
 
 <div class="container">
-  <h2>UK Postcode Finder</h2>
+  <h2>UK Postcode Finder (Manual Search)</h2>
 
-  <input type="text" id="address" placeholder="Start typing address..." autocomplete="off">
-  <button id="getPostcodeBtn">Enter</button>
+  <input type="text" id="address" placeholder="Enter full address (e.g. 83 Franchise St, Weymouth)" />
+  <button onclick="findPostcode()">Enter</button>
 
   <div id="postcode"></div>
 </div>
 
 <script>
-  let selectedAddress = null;
-
-  var options = {
-    key: "AX37-WD68-EP29-JA94", // Replace with your actual key
-    input: "address",
-    countries: "GB", // UK only
-    onAddressSelected: function(address) {
-      selectedAddress = address;
-      displayPostcode(address.postcode);
+  async function findPostcode() {
+    const apiKey = 'AX37-WD68-EP29-JA94'; // Replace with your actual Loqate key
+    const address = document.getElementById('address').value.trim();
+    const resultBox = document.getElementById('postcode');
+    
+    if (!address) {
+      resultBox.innerText = "Please enter an address.";
+      return;
     }
-  };
 
-  // Initialize Loqate autocomplete
-  new pca.Address(options);
+    resultBox.innerText = "Searching...";
 
-  // "Enter" button handler
-  document.getElementById("getPostcodeBtn").addEventListener("click", function () {
-    if (selectedAddress && selectedAddress.postcode) {
-      displayPostcode(selectedAddress.postcode);
-    } else {
-      document.getElementById("postcode").innerText = "Please select a valid UK address from the suggestions.";
+    // Step 1: Find address suggestions
+    const findUrl = `https://services.loqate.com/Capture/Interactive/Find/v1.10/json3.ws?Key=${apiKey}&Text=${encodeURIComponent(address)}&Countries=GB&Limit=1`;
+    
+    try {
+      const findRes = await fetch(findUrl);
+      const findData = await findRes.json();
+
+      if (!findData.Items || findData.Items.length === 0 || findData.Items[0].Error) {
+        resultBox.innerText = "Address not found.";
+        return;
+      }
+
+      const id = findData.Items[0].Id;
+
+      // Step 2: Retrieve full address details
+      const retrieveUrl = `https://services.loqate.com/Capture/Interactive/Retrieve/v1.00/json3.ws?Key=${apiKey}&Id=${id}`;
+      const retrieveRes = await fetch(retrieveUrl);
+      const retrieveData = await retrieveRes.json();
+
+      const addressDetails = retrieveData.Items[0];
+
+      if (addressDetails.PostalCode) {
+        resultBox.innerText = "Postcode: " + addressDetails.PostalCode;
+      } else {
+        resultBox.innerText = "Postcode not found.";
+      }
+
+    } catch (error) {
+      console.error(error);
+      resultBox.innerText = "Error retrieving postcode.";
     }
-  });
-
-  // Show postcode
-  function displayPostcode(postcode) {
-    document.getElementById("postcode").innerText = "Postcode: " + postcode;
   }
 </script>
 
